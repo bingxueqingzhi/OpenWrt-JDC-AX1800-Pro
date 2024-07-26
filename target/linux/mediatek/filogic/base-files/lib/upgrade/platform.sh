@@ -77,6 +77,7 @@ platform_do_upgrade() {
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
+	tplink,tl-xtr8488|\
 	xiaomi,redmi-router-ax6000-ubootmod)
 		fit_do_upgrade "$1"
 		;;
@@ -138,11 +139,11 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART=ubi
 		nand_do_upgrade "$1"
 		;;
-        zyxel,ex5601-t0-ubootmod)
+	zyxel,ex5601-t0-ubootmod)
 		CI_KERNPART="fit"
 		CI_ROOTPART="ubi_rootfs"
-                nand_do_upgrade "$1"
-                ;;
+		nand_do_upgrade "$1"
+		;;
 	unielec,u7981-01*)
 		local rootdev="$(cmdline_get_var root)"
 		rootdev="${rootdev##*/}"
@@ -197,15 +198,6 @@ platform_check_image() {
 
 platform_copy_config() {
 	case "$(board_name)" in
-	bananapi,bpi-r3|\
-	bananapi,bpi-r3-mini|\
-	bananapi,bpi-r4|\
-	bananapi,bpi-r4-poe|\
-	cmcc,rax3000m)
-		if [ "$CI_METHOD" = "emmc" ]; then
-			emmc_copy_config
-		fi
-		;;
 	acer,predator-w6|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt6000|\
@@ -220,6 +212,15 @@ platform_copy_config() {
 	smartrg,sdg-8734|\
 	ubnt,unifi-6-plus)
 		emmc_copy_config
+		;;
+	bananapi,bpi-r3|\
+	bananapi,bpi-r3-mini|\
+	bananapi,bpi-r4|\
+	bananapi,bpi-r4-poe|\
+	cmcc,rax3000m)
+		if [ "$CI_METHOD" = "emmc" ]; then
+			emmc_copy_config
+		fi
 		;;
 	esac
 }

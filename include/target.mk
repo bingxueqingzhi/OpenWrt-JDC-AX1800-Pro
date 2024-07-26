@@ -18,7 +18,7 @@ DEFAULT_PACKAGES:=\
 	fstools \
 	libc \
 	libgcc \
-	libustream-mbedtls \
+	libustream-openssl \
 	logd \
 	mtd \
 	netifd \
@@ -38,14 +38,25 @@ DEFAULT_PACKAGES.nas:=\
 # For router targets
 DEFAULT_PACKAGES.router:=\
 	dnsmasq-full \
-	firewall \
+	firewall4 \
 	nftables \
 	kmod-nft-offload \
-	odhcp6c \
-	odhcpd-ipv6only \
+	ipv6helper \
 	ppp \
-	ppp-mod-pppoe \
-  default-settings-chn \
+	ppp-mod-pppoe
+# For easy usage
+DEFAULT_PACKAGES.tweak:=\
+	autocore \
+	block-mount \
+	default-settings-chn \
+	kmod-nf-nathelper \
+	kmod-nf-nathelper-extra \
+	luci-light \
+	luci-app-cpufreq \
+	luci-app-opkg \
+	luci-compat \
+	luci-lib-base \
+	luci-lib-ipkg
 
 ifneq ($(DUMP),)
   all: dumpinfo
@@ -98,7 +109,7 @@ ifneq ($(DUMP),)
 endif
 
 ifneq ($(CONFIG_USE_APK),)
-DEFAULT_PACKAGES+=apk-mbedtls
+DEFAULT_PACKAGES+=apk-openssl
 else
 DEFAULT_PACKAGES+=opkg
 endif
@@ -121,6 +132,9 @@ endif
 
 # Add device specific packages (here below to allow device type set from subtarget)
 DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
+
+# Add tweaked packages
+# DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.tweak)
 
 filter_packages = $(filter-out -% $(patsubst -%,%,$(filter -%,$(1))),$(1))
 extra_packages = $(if $(filter wpad wpad-% nas,$(1)),iwinfo)

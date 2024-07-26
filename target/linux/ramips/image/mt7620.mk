@@ -55,7 +55,7 @@ define Device/alfa-network_tube-e4g
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := Tube-E4G
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci uboot-envtools uqmi -iwinfo \
-	-kmod-rt2800-soc -wpad-basic-mbedtls
+	-kmod-rt2800-soc -wpad-basic-openssl
   SUPPORTED_DEVICES += tube-e4g
 endef
 TARGET_DEVICES += alfa-network_tube-e4g
@@ -158,6 +158,16 @@ define Device/bolt_bl100
   UIMAGE_MAGIC := 0x26112015
 endef
 TARGET_DEVICES += bolt_bl100
+
+define Device/bolt_bl201
+  SOC := mt7620a
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Bolt
+  DEVICE_MODEL := BL201
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  UIMAGE_MAGIC := 0x26112015
+endef
+TARGET_DEVICES += bolt_bl201
 
 define Device/buffalo_whr-1166d
   SOC := mt7620a
@@ -652,6 +662,7 @@ define Device/iodata_wn-ac1167gr
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 01040016 8844A2D168B45A2D
   DEVICE_PACKAGES := kmod-mt76x2
+  DEFAULT := n
 endef
 TARGET_DEVICES += iodata_wn-ac1167gr
 
@@ -664,6 +675,7 @@ define Device/iodata_wn-ac733gr3
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 01040006 8844A2D168B45A2D
   DEVICE_PACKAGES := kmod-mt76x0e kmod-switch-rtl8367b
+  DEFAULT := n
 endef
 TARGET_DEVICES += iodata_wn-ac733gr3
 

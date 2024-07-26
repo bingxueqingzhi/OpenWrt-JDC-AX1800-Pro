@@ -264,11 +264,18 @@ foreach my $mirror (@ARGV) {
 		}
 	} elsif ($mirror =~ /^\@OPENWRT$/) {
 		# use OpenWrt source server directly
+	} elsif ($mirror =~ /^\@IMMORTALWRT$/) {
+		# use ImmortalWrt source server directly
 	} elsif ($mirror =~ /^\@DEBIAN\/(.+)$/) {
 		projectsmirrors '@DEBIAN', $1;
 	} elsif ($mirror =~ /^\@APACHE\/(.+)$/) {
 		projectsmirrors '@APACHE', $1;
 	} elsif ($mirror =~ /^\@GITHUB\/(.+)$/) {
+		my $dir = $1;
+		my $i = 0;
+		# replace the 2nd '/' with '@' for jsDelivr mirror
+		push @mirrors, "https://fastly.jsdelivr.net/gh/". $dir =~ s{\/}{++$i == 2 ? '@' : $&}ger;
+		push @mirrors, "https://raw.gitmirror.com/$1";
 		# give github a few more tries (different mirrors)
 		for (1 .. 5) {
 			projectsmirrors '@GITHUB', $1;
@@ -294,6 +301,7 @@ foreach my $mirror (@ARGV) {
 	}
 }
 
+projectsmirrors '@IMMORTALWRT';
 projectsmirrors '@OPENWRT';
 
 if (-f "$target/$filename") {

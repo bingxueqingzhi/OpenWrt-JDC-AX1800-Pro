@@ -106,6 +106,8 @@
 		reset-assert-us = <10000>;
 		reset-deassert-us = <50000>;
 		realtek,aldps-enable;
+		realtek,led-link-select = <0x0 0xa7 0xa7>;
+		realtek,led-act-select = <0x2>;
 	};
 };
 

@@ -105,7 +105,7 @@ define Device/cznic_turris-omnia
   KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
   DEVICE_PACKAGES :=  \
     mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
-    wpad-basic-mbedtls kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    wpad-basic-openssl kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
     kmod-mt7915-firmware partx-utils kmod-i2c-mux-pca954x kmod-leds-turris-omnia
   IMAGES := sysupgrade.img.gz
   IMAGE/sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
@@ -235,7 +235,7 @@ TARGET_DEVICES += kobol_helios4
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_VENDOR := Linksys
-  DEVICE_PACKAGES := kmod-mwlwifi wpad-basic-mbedtls
+  DEVICE_PACKAGES := kmod-mwlwifi wpad-basic-openssl
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 	append-ubi | pad-to $$$$(PAGESIZE)
