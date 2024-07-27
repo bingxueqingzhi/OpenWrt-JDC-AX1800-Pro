@@ -11,16 +11,35 @@ clone_repo() {
     local repo_url=$1
     local target_dir=$2
     local branch=$3
-    if [ ! -d "$target_dir" ]; then
-        echo "Cloning $repo_url into $target_dir..."
-        if git clone "$repo_url" "$target_dir" -b "$branch" --depth=1; then
-            echo "Cloned $repo_url successfully."
-        else
-            echo "Failed to clone $repo_url."
-            exit 1
-        fi
+    shift 3
+    local git_params=("$@")
+
+    echo "Cloning repo with URL: $repo_url, Branch: $branch, Target: $target_dir, Params: ${git_params[@]}"
+
+    if [ -d "$target_dir/.git" ]; then
+        echo "Repository $target_dir already exists. Pulling updates..."
+        cd "$target_dir" || exit
+        git fetch --all
+        git checkout "$branch"
+        git pull origin "$branch"
+        cd - || exit
     else
-        echo "$target_dir already exists, skipping clone."
+        echo "Cloning $repo_url into $target_dir..."
+        if [ ${#git_params[@]} -eq 0 ]; then
+            if git clone "$repo_url" "$target_dir" -b "$branch"; then
+                echo "Cloned $repo_url successfully."
+            else
+                echo "Failed to clone $repo_url."
+                exit 1
+            fi
+        else
+            if git clone "${git_params[@]}" "$repo_url" "$target_dir" -b "$branch"; then
+                echo "Cloned $repo_url successfully."
+            else
+                echo "Failed to clone $repo_url."
+                exit 1
+            fi
+        fi
     fi
 }
 
@@ -28,14 +47,51 @@ clone_repo() {
 replace_dependency() {
     local dep_name=$1
     local repo_url=$2
-    echo "Replacing $dep_name..."
-    rm -rf "package/libs/$dep_name"
-    if git clone "$repo_url" "package/libs/$dep_name"; then
-        echo "$dep_name replaced successfully."
+    local branch=$3
+    shift 3
+    local git_params=("$@")
+
+    local target_dir="package/libs/$dep_name"
+
+    echo "Replacing dependency $dep_name with URL: $repo_url, Branch: $branch, Target: $target_dir, Params: ${git_params[@]}"
+
+    if [ -d "$target_dir/.git" ]; then
+        echo "Repository $target_dir already exists. Pulling updates..."
+        cd "$target_dir" || exit
+        git fetch --all
+        git checkout "$branch"
+        git pull origin "$branch"
+        cd - || exit
     else
-        echo "Failed to replace $dep_name."
-        exit 1
+        echo "Replacing $dep_name..."
+        rm -rf "$target_dir"
+        if git clone "${git_params[@]}" "$repo_url" "$target_dir" -b "$branch"; then
+            echo "$dep_name replaced successfully."
+        else
+            echo "Failed to replace $dep_name."
+            exit 1
+        fi
     fi
+}
+
+# Function to replace dependencies from repo
+replace_dependency_from_repo() {
+    local dep_name=$1
+    local repo_url=$2
+    local branch=$3
+    shift 3
+    local git_params=("$@")
+
+    local target_dir="package/libs/$dep_name"
+
+    local temp_repo="temp_repo_$dep_name"
+
+    echo "Replacing $dep_name from repo with URL: $repo_url, Branch: $branch, Target: $target_dir, Temp Repo: $temp_repo, Params: ${git_params[@]}"
+
+    rm -rf "$target_dir"
+    clone_repo "$repo_url" "$temp_repo" "$branch" "${git_params[@]}"
+    cp -a "$temp_repo/package/libs/openssl" "$target_dir"
+    echo "$dep_name replaced successfully."
 }
 
 # Clone openwrt packages if not already present
@@ -55,14 +111,27 @@ sed -i '/config LIBCURL_OPENSSL_QUIC/,+3 s/default n/default y/' feeds/packages/
 echo "OpenSSL, nghttp3, and ngtcp2 enabled successfully."
 
 # Replace dependencies
-replace_dependency "ngtcp2" "http://github.com/sbwml/package_libs_ngtcp2"
-replace_dependency "nghttp3" "http://github.com/sbwml/package_libs_nghttp3"
-replace_dependency "openssl" "http://github.com/openwrt/openwrt -b $OPENWRT_BRANCH --depth=1"
+replace_dependency "ngtcp2" "https://github.com/sbwml/package_libs_ngtcp2" "main"
+replace_dependency "nghttp3" "https://github.com/sbwml/package_libs_nghttp3" "main"
+replace_dependency_from_repo "openssl" "https://github.com/openwrt/openwrt" "$OPENWRT_BRANCH" --depth=1
 
 # Download OpenSSL QUIC patches
 echo "Downloading OpenSSL QUIC patches..."
-mkdir -p $PATCHES_DIR
-cd $PATCHES_DIR && rm -rf * && cd -
+# Check if the patches directory exists
+if [ ! -d "$PATCHES_DIR" ]; then
+    mkdir -p $PATCHES_DIR
+fi
+
+# # Check if the files in the patches directory is the same as the patches array, if not, delete the files
+# if [ "$(ls -A $PATCHES_DIR)" ]; then
+#     for patch in "${patches[@]}"; do
+#         if [ ! -f "$PATCHES_DIR/$patch" ]; then
+#             echo "Deleting Invalid files in $PATCHES_DIR..."
+#             rm -rf $PATCHES_DIR/*
+#             break
+#         fi
+#     done
+# fi
 
 patches=(
     "0001-QUIC-Add-support-for-BoringSSL-QUIC-APIs.patch"
@@ -112,6 +181,11 @@ patches=(
 )
 
 for patch in "${patches[@]}"; do
+    if [ -f "$PATCHES_DIR/$patch" ]; then
+        echo "$patch already exists."
+        continue
+    fi
+
     if wget -P $PATCHES_DIR "https://$MIRROR_URL/openwrt/patch/openssl/quic/$patch"; then
         echo "Downloaded $patch successfully."
     else
@@ -120,19 +194,24 @@ for patch in "${patches[@]}"; do
     fi
 done
 
-# Patch openssl/Makefile
-OPENSSL_MAKEFILE="package/libs/openssl/Makefile"
-if [ -f "$OPENSSL_MAKEFILE" ]; then
-    echo "Patching $OPENSSL_MAKEFILE..."
-    if sed -i 's/OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))-openwrt/OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))/g' $OPENSSL_MAKEFILE; then
-        echo "Patched $OPENSSL_MAKEFILE successfully."
-    else
-        echo "Failed to patch $OPENSSL_MAKEFILE."
-        exit 1
-    fi
-else
-    echo "$OPENSSL_MAKEFILE not found."
-    exit 1
-fi
+# # Patch openssl/Makefile
+# OPENSSL_MAKEFILE="package/libs/openssl/Makefile"
+# if [ -f "$OPENSSL_MAKEFILE" ]; then
+#     echo "Patching $OPENSSL_MAKEFILE..."
+#     if sed -i 's/OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))-openwrt/OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))/g' $OPENSSL_MAKEFILE; then
+#         echo "Patched $OPENSSL_MAKEFILE successfully."
+#     else
+#         echo "Failed to patch $OPENSSL_MAKEFILE."
+#         exit 1
+#     fi
+# else
+#     echo "$OPENSSL_MAKEFILE not found."
+#     exit 1
+# fi
+
+# Update the stamp file
+touch prepare_dependencies.stamp
+
+./scripts/feeds install -a
 
 echo "All dependencies and patches are prepared successfully."

@@ -50,12 +50,16 @@ $(package/stamp-install): $(package/stamp-compile)
 $(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
 check: $(tools/stamp-check) $(toolchain/stamp-check) $(package/stamp-check)
 
-prepare_dependencies:
-	chmod +x scripts/prepare_dependencies.sh
-	./scripts/prepare_dependencies.sh
-
 printdb:
 	@true
+
+prepare_dependencies: scripts/prepare_dependencies.sh prepare_dependencies.stamp
+
+scripts/prepare_dependencies.sh:
+	chmod +x $@
+
+prepare_dependencies.stamp: scripts/prepare_dependencies.sh
+	./scripts/prepare_dependencies.sh && touch prepare_dependencies.stamp
 
 prepare: $(target/stamp-compile) prepare_dependencies
 
