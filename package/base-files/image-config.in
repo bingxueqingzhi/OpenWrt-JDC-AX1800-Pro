@@ -208,6 +208,7 @@ if VERSIONOPT
 			 %M .. Manufacturer name or "OpenWrt"
 			 %P .. Product name or "Generic"
 			 %h .. Hardware revision or "v0"
+			 %DT .. DateTime for Build
 
 	config VERSION_HOME_URL
 		string
