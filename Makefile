@@ -51,7 +51,8 @@ $(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
 check: $(tools/stamp-check) $(toolchain/stamp-check) $(package/stamp-check)
 
 prepare_dependencies:
-    ./scripts/prepare_dependencies.sh
+	chmod +x scripts/prepare_dependencies.sh
+	./scripts/prepare_dependencies.sh
 
 printdb:
 	@true
