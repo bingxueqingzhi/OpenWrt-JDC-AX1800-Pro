@@ -50,10 +50,13 @@ $(package/stamp-install): $(package/stamp-compile)
 $(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
 check: $(tools/stamp-check) $(toolchain/stamp-check) $(package/stamp-check)
 
+prepare_dependencies:
+    ./scripts/prepare_dependencies.sh
+
 printdb:
 	@true
 
-prepare: $(target/stamp-compile)
+prepare: $(target/stamp-compile) prepare_dependencies
 
 _clean: FORCE
 	rm -rf $(BUILD_DIR) $(STAGING_DIR) $(BIN_DIR) $(OUTPUT_DIR)/packages/$(ARCH_PACKAGES) $(TOPDIR)/staging_dir/packages
