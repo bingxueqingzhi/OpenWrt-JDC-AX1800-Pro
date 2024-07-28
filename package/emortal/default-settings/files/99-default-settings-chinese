@@ -29,4 +29,9 @@ fi
 
 sed -i.bak "s,https://downloads.immortalwrt.org,$opkg_mirror,g" "/etc/opkg/distfeeds.conf"
 
+# Disable some feeds (not available now for ipq60xx and aarch64_cortex-a53)
+sed -i '/ipq60xx\/packages$/ s/^/#/' /etc/opkg/distfeeds.conf
+sed -i '/aarch64_cortex-a53\/nss_packages$/ s/^/#/' /etc/opkg/distfeeds.conf
+sed -i '/aarch64_cortex-a53\/sqm_scripts_nss$/ s/^/#/' /etc/opkg/distfeeds.conf
+
 exit 0
