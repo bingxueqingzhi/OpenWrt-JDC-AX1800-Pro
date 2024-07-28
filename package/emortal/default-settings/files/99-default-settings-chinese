@@ -34,4 +34,9 @@ sed -i '/ipq60xx\/packages$/ s/^/#/' /etc/opkg/distfeeds.conf
 sed -i '/aarch64_cortex-a53\/nss_packages$/ s/^/#/' /etc/opkg/distfeeds.conf
 sed -i '/aarch64_cortex-a53\/sqm_scripts_nss$/ s/^/#/' /etc/opkg/distfeeds.conf
 
+# Add Datetime to Distribution
+CURRENT_TIME=$(date '+%Y%m%d%H%M')
+sed -i -r "s/(DISTRIB_DESCRIPTION=')[^ ]* /\1$CURRENT_TIME@/" "$FILE_PATH" /etc/openwrt_release
+
+
 exit 0
