@@ -44,16 +44,14 @@ clone_repo() {
 }
 
 # Function to replace dependencies
-replace_dependency() {
-    local dep_name=$1
+replace_dependency_with_repo() {
+    local target_dir=$1
     local repo_url=$2
     local branch=$3
     shift 3
     local git_params=("$@")
 
-    local target_dir="package/libs/$dep_name"
-
-    echo "Replacing dependency $dep_name with URL: $repo_url, Branch: $branch, Target: $target_dir, Params: ${git_params[@]}"
+    echo "Replacing dependency $target_dir with URL: $repo_url, Branch: $branch, Params: ${git_params[@]}"
 
     if [ -d "$target_dir/.git" ]; then
         echo "Repository $target_dir already exists. Pulling updates..."
@@ -63,12 +61,12 @@ replace_dependency() {
         git pull origin "$branch"
         cd - || exit
     else
-        echo "Replacing $dep_name..."
+        echo "Replacing $target_dir..."
         rm -rf "$target_dir"
         if git clone "${git_params[@]}" "$repo_url" "$target_dir" -b "$branch"; then
-            echo "$dep_name replaced successfully."
+            echo "$target_dir replaced successfully."
         else
-            echo "Failed to replace $dep_name."
+            echo "Failed to replace $target_dir."
             exit 1
         fi
     fi
@@ -76,44 +74,26 @@ replace_dependency() {
 
 # Function to replace dependencies from repo
 replace_dependency_from_repo() {
-    local dep_name=$1
-    local repo_url=$2
-    local branch=$3
-    shift 3
+    local target_dir=$1
+    local temp_repo=$2
+    local repo_url=$3
+    local branch=$4
+    shift 5
     local git_params=("$@")
 
-    local target_dir="package/libs/$dep_name"
-
-    local temp_repo="temp_repo_$dep_name"
-
-    echo "Replacing $dep_name from repo with URL: $repo_url, Branch: $branch, Target: $target_dir, Temp Repo: $temp_repo, Params: ${git_params[@]}"
+    echo "Replacing $target_dir from repo with URL: $repo_url, Branch: $branch, Temp Repo: $temp_repo, Params: ${git_params[@]}"
 
     rm -rf "$target_dir"
     clone_repo "$repo_url" "$temp_repo" "$branch" "${git_params[@]}"
     cp -a "$temp_repo/package/libs/openssl" "$target_dir"
-    echo "$dep_name replaced successfully."
+    echo "$target_dir replaced successfully."
 }
 
-# Clone openwrt packages if not already present
-clone_repo $OPENWRT_PACKAGES_URL "openwrt_packages" $OPENWRT_BRANCH
-
-# Replace curl package
-echo "Replacing curl package..."
-rm -rf feeds/packages/net/curl
-cp -a openwrt_packages/net/curl feeds/packages/net/curl
-echo "Curl package replaced successfully."
-
-# Enable openssl & nghttp3 & ngtcp2
-echo "Enabling OpenSSL, nghttp3, and ngtcp2..."
-sed -i 's/default LIBCURL_MBEDTLS/default LIBCURL_OPENSSL/g' feeds/packages/net/curl/Config.in
-sed -i -E '/LIBCURL_NG(HTTP3|TCP2)/,/default n/s/default n/default y/' feeds/packages/net/curl/Config.in
-sed -i '/config LIBCURL_OPENSSL_QUIC/,+3 s/default n/default y/' feeds/packages/net/curl/Config.in
-echo "OpenSSL, nghttp3, and ngtcp2 enabled successfully."
-
 # Replace dependencies
-replace_dependency "ngtcp2" "https://github.com/sbwml/package_libs_ngtcp2" "main"
-replace_dependency "nghttp3" "https://github.com/sbwml/package_libs_nghttp3" "main"
-replace_dependency_from_repo "openssl" "https://github.com/openwrt/openwrt" "$OPENWRT_BRANCH" --depth=1
+replace_dependency_with_repo "feeds/packages/net/curl" "https://github.com/sbwml/feeds_packages_net_curl" "main"
+replace_dependency_with_repo "package/libs/ngtcp2" "https://github.com/sbwml/package_libs_ngtcp2" "main"
+replace_dependency_with_repo "package/libs/nghttp3" "https://github.com/sbwml/package_libs_nghttp3" "main"
+replace_dependency_from_repo "package/libs/openssl" "temp_openwrt" "https://github.com/openwrt/openwrt" "$OPENWRT_BRANCH" --depth=1
 
 # Download OpenSSL QUIC patches
 echo "Downloading OpenSSL QUIC patches..."
