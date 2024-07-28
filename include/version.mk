@@ -87,6 +87,7 @@ endef
 #'
 
 CURRENT_DATE_TIME := $(shell date '+%Y-%m-%d %H:%M:%S')
+ESCAPED_DATE_TIME := $(shell echo $(CURRENT_DATE_TIME) | sed 's/[\/&]/\\&/g')
 
 VERSION_SED_SCRIPT:=$(SED) 's,%U,$(call sed_escape,$(VERSION_REPO)),g' \
 	-e 's,%V,$(call sed_escape,$(VERSION_NUMBER)),g' \
@@ -107,5 +108,5 @@ VERSION_SED_SCRIPT:=$(SED) 's,%U,$(call sed_escape,$(VERSION_REPO)),g' \
 	-e 's,%s,$(call sed_escape,$(VERSION_SUPPORT_URL)),g' \
 	-e 's,%P,$(call sed_escape,$(VERSION_PRODUCT)),g' \
 	-e 's,%h,$(call sed_escape,$(VERSION_HWREV)),g' \
-	-e 's,%DT,$(call sed_escape,$(CURRENT_DATE_TIME))@,g'
+	-e 's,%DT,$(call sed_escape,$(ESCAPED_DATE_TIME))@,g'
 
